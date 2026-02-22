@@ -2,6 +2,31 @@
 
 Bu rehber, hiç bilmeyen biri için **adım adım** ilerleyecek şekilde hazırlandı.
 
+## Hemen Başla (Codex'i hiç bilmeyen için)
+
+Eğer "ben şimdi ne yapacağım" diyorsan sadece bunu uygula:
+
+1. Codex'e şu mesajı gönder:
+
+   ```text
+   Aşama-1'i birlikte yapalım. Bana tek tek komut ver, ben çalıştırıp sonucu sana yazayım.
+   Her adımda sadece 1 komut ver.
+   ```
+
+2. Codex'in verdiği ilk komutu terminalde çalıştır.
+3. Çıkan sonucu kopyala ve tekrar Codex'e gönder.
+4. Bir sonraki komutu iste.
+
+> Kural: **Tek seferde tek komut**. Böylece hata olursa hemen düzeltiriz.
+
+Örnek ilerleme şekli:
+- Sen: "Hazırım"
+- Codex: "`dotnet --version` çalıştır"
+- Sen: "çıktı: 8.0.xx"
+- Codex: "harika, şimdi şu komutu çalıştır..."
+
+---
+
 ## 0) Hedefimiz
 
 Bu projede aşağıdaki özelliklere giden bir temel kuracağız:
