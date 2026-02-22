@@ -15,17 +15,6 @@ namespace Lineart.WinForms.Controls
         public CabinetEntity SelectedCabinet { get; private set; }
         public event EventHandler<CabinetEntity> SelectionChanged;
 
-        // YENİ EKLENEN METOT: Dışarıdan (Örn: TreeList'ten) seçim yapılabilmesi için
-        public void SetSelectedCabinet(CabinetEntity cabinet)
-        {
-            if (SelectedCabinet != cabinet)
-            {
-                SelectedCabinet = cabinet;
-                SelectionChanged?.Invoke(this, SelectedCabinet);
-                this.Invalidate(); // Seçim çerçevesini çizmek için ekranı yenile
-            }
-        }
-
         // --- KAMERA AYARLARI ---
         private float _zoom = 0.4f; // Sahnemiz artık daha geniş
         private PointF _panOffset = new PointF(100, 100);
@@ -92,7 +81,7 @@ namespace Lineart.WinForms.Controls
                 var cab = Document.Cabinets[i];
                 RectangleF cabBounds = new RectangleF(
                     (float)cab.Position.X, (float)cab.Position.Y,
-                    (float)cab.TotalWidth, (float)cab.OverallHeight); // TotalHeight yerine OverallHeight
+                    (float)cab.TotalWidth, (float)cab.TotalHeight);
 
                 if (cabBounds.Contains(mouseX_InModel, mouseY_InModel))
                 {
@@ -157,40 +146,18 @@ namespace Lineart.WinForms.Controls
                         proposedX = otherCabinet.Position.X - SelectedCabinet.TotalWidth; // Tam yapıştır
                     }
 
-                    // 2. Y EKSENİNDE YAPIŞMA (Gelişmiş Alt/Üst Hizalama)
-                    double myTop = proposedY;
-                    double myBottom = proposedY + SelectedCabinet.OverallHeight; // Benim alt noktam
-
-                    double otherTop = otherCabinet.Position.Y;
-                    double otherBottom = otherCabinet.Position.Y + otherCabinet.OverallHeight; // Diğer dolabın alt noktası
-
-                    // A) ALTLARI HİZALA (En çok istenen özellik: Baza/Zemin hizasına oturtma)
-                    if (Math.Abs(myBottom - otherBottom) < snapTolerance)
+                    // 2. Y EKSENİNDE YAPIŞMA (Üst/Alt Hizalama)
+                    // Benim ÜST kenarım, diğerinin ÜST kenarıyla aynı hizaya geldi mi?
+                    if (Math.Abs(proposedY - otherCabinet.Position.Y) < snapTolerance)
                     {
-                        proposedY = otherBottom - SelectedCabinet.OverallHeight;
+                        proposedY = otherCabinet.Position.Y; // Aynı çizgiye hizala
                     }
-                    // B) ÜSTLERİ HİZALA (Taç/Tavan hizasına oturtma)
-                    else if (Math.Abs(myTop - otherTop) < snapTolerance)
-                    {
-                        proposedY = otherTop;
-                    }
-                    // C) ÜST ÜSTE OTURTMA (Benim Altım, Diğerinin Üstüne binsin)
-                    else if (Math.Abs(myBottom - otherTop) < snapTolerance)
-                    {
-                        proposedY = otherTop - SelectedCabinet.OverallHeight;
-                    }
-                    // D) ALT ALTA OTURTMA (Benim Üstüm, Diğerinin Altına yapışsın)
-                    else if (Math.Abs(myTop - otherBottom) < snapTolerance)
-                    {
-                        proposedY = otherBottom;
-                    }
+                    // Üst dolaplar için: Benim ALT kenarım, diğerinin ÜSTÜNE oturdu mu? vb. kurallar buraya eklenebilir.
                 }
 
                 // Hesaplanmış nihai pozisyonu dolaba uygula
                 SelectedCabinet.Position = new Point2D(proposedX, proposedY);
                 this.Invalidate();
-
-
             }
         }
 
@@ -238,8 +205,9 @@ namespace Lineart.WinForms.Controls
 
                 foreach (var part in cabinet.Parts)
                 {
-                    // Çizim işini yeni ekleyeceğimiz metoda devrediyoruz
-                    DrawPart(g, part, partPen, partBrush);
+                    RectangleF rect = part.FrontViewBounds;
+                    g.FillRectangle(partBrush, rect);
+                    g.DrawRectangle(partPen, rect.X, rect.Y, rect.Width, rect.Height);
                 }
 
                 // ÖLÇÜLERİ ÇİZDİRİYORUZ
@@ -250,7 +218,7 @@ namespace Lineart.WinForms.Controls
 
                 if (cabinet == SelectedCabinet)
                 {
-                    g.DrawRectangle(selectionPen, 0, 0, (float)cabinet.TotalWidth, (float)cabinet.OverallHeight); // TotalHeight yerine OverallHeight
+                    g.DrawRectangle(selectionPen, 0, 0, (float)cabinet.TotalWidth, (float)cabinet.TotalHeight);
                 }
 
                 g.Restore(state);
@@ -289,100 +257,8 @@ namespace Lineart.WinForms.Controls
             var state = g.Save();
             g.TranslateTransform(textPos.X, textPos.Y);
             g.RotateTransform((float)(angle * 180 / Math.PI));
-
-            // Yazının arkasına ufak bir siyah maske at ki çizgilerle karışmasın
-            SizeF textSize = g.MeasureString(dim.Text, font);
-            RectangleF bgRect = new RectangleF(-textSize.Width / 2, -textSize.Height - (2f / _zoom), textSize.Width, textSize.Height);
-            using (Brush bgBrush = new SolidBrush(Color.FromArgb(200, 30, 30, 30))) // Yarı saydam koyu arka plan
-            {
-                g.FillRectangle(bgBrush, bgRect);
-            }
-
             g.DrawString(dim.Text, font, brush, 0, -2f / _zoom, sf);
             g.Restore(state);
-        }
-
-        private void DrawPart(Graphics g, PartEntity part, Pen pen, Brush brush)
-        {
-            RectangleF rect = part.FrontViewBounds;
-
-            // Tipine göre farklı çizim standartları uygulayalım
-            switch (part.Type)
-            {
-                case PartType.Gövde:
-                    g.FillRectangle(brush, rect);
-                    g.DrawRectangle(pen, rect.X, rect.Y, rect.Width, rect.Height);
-                    break;
-
-                case PartType.Raf:
-                    using (Brush rafBrush = new SolidBrush(Color.FromArgb(150, 0, 255, 0))) // Yeşilimsi raf
-                    {
-                        g.FillRectangle(rafBrush, rect);
-                        g.DrawRectangle(pen, rect.X, rect.Y, rect.Width, rect.Height);
-                    }
-                    break;
-
-                case PartType.Baza:
-                    // Bazayı yatay tarama çizgileri ile çiz
-                    using (Brush bazaBrush = new System.Drawing.Drawing2D.HatchBrush(System.Drawing.Drawing2D.HatchStyle.Horizontal, Color.Gray, Color.Transparent))
-                    {
-                        g.FillRectangle(bazaBrush, rect);
-                        g.DrawRectangle(pen, rect.X, rect.Y, rect.Width, rect.Height);
-                    }
-                    break;
-
-                case PartType.Tac:
-                    using (Brush tacBrush = new SolidBrush(Color.FromArgb(100, 255, 150, 0))) // Turuncumsu Taç
-                    {
-                        g.FillRectangle(tacBrush, rect);
-                        g.DrawRectangle(pen, rect.X, rect.Y, rect.Width, rect.Height);
-                    }
-                    break;
-
-                case PartType.Ankastre:
-                    using (Brush ankBrush = new SolidBrush(Color.FromArgb(200, 50, 50, 50))) // Koyu Gri
-                    {
-                        g.FillRectangle(ankBrush, rect);
-                        using (Font f = new Font("Arial", 16f / _zoom, FontStyle.Bold))
-                        using (Brush textBrush = new SolidBrush(Color.White))
-                        {
-                            StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-                            g.DrawString("ANKASTRE", f, textBrush, rect, sf);
-                        }
-                    }
-                    break;
-
-                case PartType.Cekmece:
-                case PartType.Kapak:
-                    // 1. ŞEFFAF (Yarı Saydam) Dolgu: Arkadaki rafları flu gösterir, karmaşayı gizler.
-                    using (Brush glassBrush = new SolidBrush(Color.FromArgb(45, 255, 255, 255)))
-                    {
-                        g.FillRectangle(glassBrush, rect);
-                    }
-
-                    // 2. İnce ve zarif bir çerçeve
-                    using (Pen frontPen = new Pen(Color.FromArgb(180, 255, 255, 255), 1.2f / _zoom))
-                    {
-                        g.DrawRectangle(frontPen, rect.X, rect.Y, rect.Width, rect.Height);
-                    }
-
-                    // 3. Teknik resim çizgileri (Çok hafif bir beyazlıkta, göz yormayan)
-                    using (Pen dashPen = new Pen(Color.FromArgb(80, 255, 255, 255), 1.0f / _zoom) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash })
-                    {
-                        if (part.Type == PartType.Cekmece)
-                        {
-                            g.DrawLine(dashPen, rect.Left, rect.Top, rect.Right, rect.Bottom);
-                            g.DrawLine(dashPen, rect.Right, rect.Top, rect.Left, rect.Bottom);
-                        }
-                        else // Kapak
-                        {
-                            float midY = rect.Top + (rect.Height / 2);
-                            g.DrawLine(dashPen, rect.Right, rect.Top, rect.Left, midY);
-                            g.DrawLine(dashPen, rect.Right, rect.Bottom, rect.Left, midY);
-                        }
-                    }
-                    break;
-            }
         }
     }
 }

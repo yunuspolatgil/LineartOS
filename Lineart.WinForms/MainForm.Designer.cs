@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             ribbonControl1 = new DevExpress.XtraBars.Ribbon.RibbonControl();
             barButtonItem1 = new DevExpress.XtraBars.BarButtonItem();
             ribbonPage1 = new DevExpress.XtraBars.Ribbon.RibbonPage();
@@ -42,7 +41,6 @@
             // 
             // ribbonControl1
             // 
-            ribbonControl1.Cursor = System.Windows.Forms.Cursors.Hand;
             ribbonControl1.ExpandCollapseItem.Id = 0;
             ribbonControl1.Items.AddRange(new DevExpress.XtraBars.BarItem[] { ribbonControl1.ExpandCollapseItem, ribbonControl1.SearchEditItem, barButtonItem1 });
             ribbonControl1.Location = new System.Drawing.Point(0, 0);
@@ -55,9 +53,6 @@
             // 
             barButtonItem1.Caption = "Alt Dolap ekle";
             barButtonItem1.Id = 1;
-            barButtonItem1.ImageOptions.Image = (System.Drawing.Image)resources.GetObject("barButtonItem1.ImageOptions.Image");
-            barButtonItem1.ImageOptions.LargeImage = (System.Drawing.Image)resources.GetObject("barButtonItem1.ImageOptions.LargeImage");
-            barButtonItem1.LargeWidth = 80;
             barButtonItem1.Name = "barButtonItem1";
             barButtonItem1.ItemClick += btnAltDolapEkle_ItemClick;
             // 
