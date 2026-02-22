@@ -70,7 +70,8 @@ Bu aşamayı bitirince bir sonraki adımda çizim yüzeyini ekleyeceğiz.
 ## 3) Kurulum Ön Koşulları
 
 - Visual Studio 2022 (17.8+ önerilir)
-- .NET 8 SDK
+- .NET 8 SDK (tercih)
+- Eğer ortam mecburi ise .NET 7 ile de başlayabiliriz
 - DevExpress WinForms bileşenleri kurulu olmalı
 
 Terminalden kontrol:
@@ -79,7 +80,17 @@ Terminalden kontrol:
 dotnet --version
 ```
 
-8.x görmelisin.
+7.x, 8.x veya 9.x görebilirsin. Önemli olan projeyi `net7.0` hedefiyle oluşturmak.
+
+---
+
+## 3.1) Senin ortama özel not (ÖNEMLİ)
+
+Senin verdiğin bilgiye göre:
+- SDK: `9.0.311`
+- Proje hedefi: **mecburen .NET 7**
+
+Bu durumda sorun yok. `dotnet` SDK 9 yüklü olsa da projeyi `net7.0` hedefiyle oluşturabiliriz.
 
 ---
 
@@ -90,9 +101,9 @@ Proje kökünde şu komutları çalıştır:
 ```bash
 dotnet new sln -n LineartOS
 
-dotnet new classlib -n Lineart.Core -f net8.0
-dotnet new classlib -n Lineart.Application -f net8.0
-dotnet new winforms -n Lineart.WinForms -f net8.0-windows
+dotnet new classlib -n Lineart.Core -f net7.0
+dotnet new classlib -n Lineart.Application -f net7.0
+dotnet new winforms -n Lineart.WinForms -f net7.0-windows
 
 dotnet sln LineartOS.sln add Lineart.Core/Lineart.Core.csproj
 dotnet sln LineartOS.sln add Lineart.Application/Lineart.Application.csproj
@@ -220,6 +231,8 @@ Pencere açılıyorsa Aşama-1 tamam.
 ---
 
 ## 9) Bir sonraki adım (Aşama-2 planı)
+
+> Senin ortam için hedef framework: `net7.0`
 
 Bir sonraki mesajda şunları birlikte yapacağız:
 1. Özel `DrawingCanvasControl` (double-buffering)
