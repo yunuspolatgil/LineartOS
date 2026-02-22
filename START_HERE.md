@@ -157,9 +157,11 @@ namespace Lineart.Core.Document;
 public sealed class DrawingDocument
 {
     public string ProjectName { get; set; } = "Yeni Proje";
-    public List<PartEntity> Parts { get; } = [];
+    public List<PartEntity> Parts { get; } = new();
 }
 ```
+
+> Not (.NET 7/C# 11): `[]` yazımı yerine `new()` kullanıyoruz. `[]` C# 12 özelliğidir ve .NET 7 başlangıcında hata verir.
 
 ---
 
