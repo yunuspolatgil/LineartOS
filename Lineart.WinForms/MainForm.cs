@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Windows.Forms;
+using DevExpress.XtraBars;
 using Lineart.Core.Document;
 using Lineart.Core.Entities;
 using Lineart.WinForms.Controls;
-// DevExpress using'leri eklenecektir...
 
 namespace Lineart.WinForms
 {
@@ -16,62 +16,67 @@ namespace Lineart.WinForms
         {
             InitializeComponent();
             SetupWorkspace();
-            CreateMockData();
         }
 
         private void SetupWorkspace()
         {
-            // 1. Çizim Tahtasını oluştur ve orta alana yerleştir
+            // Yeni ve boş bir proje belgesi başlat
+            _currentDocument = new DrawingDocument();
+
             _canvas = new DrawingCanvas();
             _canvas.Dock = DockStyle.Fill;
-            this.Controls.Add(_canvas); // Veya varsa DocumentManager alanına eklenir
+            _canvas.Document = _currentDocument;
+            this.Controls.Add(_canvas);
             _canvas.BringToFront();
 
-            // 2. PropertyGrid Olayını Bağla (Ölçü değiştiğinde çizimi güncelle)
+            // KULLANICI EKRANDA BİR ŞEYE TIKLADIĞINDA NE OLACAK?
+            _canvas.SelectionChanged += Canvas_SelectionChanged;
+
+            // PROPERTYGRID'DE ÖLÇÜ DEĞİŞTİĞİNDE NE OLACAK?
             propertyGridControl1.CellValueChanged += PropertyGridControl1_CellValueChanged;
-
-            // 3. TreeList Olayını Bağla (Ağaçtan dolap seçildiğinde özelliklerini göster)
-            treeListProject.FocusedNodeChanged += TreeListProject_FocusedNodeChanged;
         }
 
-        private void CreateMockData()
+        private void Canvas_SelectionChanged(object sender, CabinetEntity selectedCabinet)
         {
-            _currentDocument = new DrawingDocument();
-            var myCabinet = new CabinetEntity { Name = "Evye Alt Dolabı", TotalWidth = 900 };
-
-            _currentDocument.AddCabinet(myCabinet); // İçeride RebuildParts çalışır
-
-            _canvas.Document = _currentDocument;
-            _canvas.Invalidate(); // İlk çizimi tetikle
-
-            // Geçici olarak TreeList'e doldurmak yerine doğrudan PropertyGrid'e atıyoruz
-            propertyGridControl1.SelectedObject = myCabinet;
+            // Ekranda seçilen dolabı, sağdaki Özellik (PropertyGrid) paneline bağla.
+            // Eğer boşluğa tıklanmışsa null gider, panel temizlenir.
+            propertyGridControl1.SelectedObject = selectedCabinet;
         }
 
-        // --- KONTROL OLAYLARI (EVENTS) ---
-
-        // Sağdaki panelde bir ölçü (örn: Genişlik 600'den 800'e) değiştirildiğinde tetiklenir
         private void PropertyGridControl1_CellValueChanged(object sender, DevExpress.XtraVerticalGrid.Events.CellValueChangedEventArgs e)
         {
             if (propertyGridControl1.SelectedObject is CabinetEntity selectedCabinet)
             {
-                // 1. Parametrik motoru çalıştır: Parçaları yeni milimetre değerlerine göre baştan hesapla
+                // Değişen özelliğe göre dolabı yeniden hesapla ve ekranı güncelle
                 selectedCabinet.RebuildParts();
-
-                // 2. Ekranı yenile
                 _canvas.Invalidate();
             }
         }
 
-        // Soldaki ağaçtan (TreeList) başka bir dolap seçildiğinde tetiklenir
-        private void TreeListProject_FocusedNodeChanged(object sender, DevExpress.XtraTreeList.FocusedNodeChangedEventArgs e)
+        // --- RİBBON MENÜ BUTON OLAYI ---
+        // DevExpress Ribbon'a "Alt Dolap Ekle" adında bir BarButtonItem eklediğinizi ve 
+        // ItemClick olayına bunu bağladığınızı varsayıyoruz:
+        private void btnAltDolapEkle_ItemClick(object sender, ItemClickEventArgs e)
         {
-            // Seçilen düğümdeki objeyi alıp PropertyGrid'e gönderiyoruz
-            var selectedObj = treeListProject.GetDataRecordByNode(e.Node);
-            if (selectedObj != null)
+            // Kullanıcının komutuyla YENİ bir dolap yarat
+            var yeniDolap = new CabinetEntity
             {
-                propertyGridControl1.SelectedObject = selectedObj;
-            }
+                Name = "Yeni Alt Dolap",
+                TotalWidth = 600,
+                TotalHeight = 720,
+                TotalDepth = 560
+            };
+
+            // X ekseninde biraz sağa kaydırarak ekle (üst üste binmesinler diye)
+            int dolapSayisi = _currentDocument.Cabinets.Count;
+            yeniDolap.Position = new Core.Geometry.Point2D(dolapSayisi * 700, 0);
+
+            _currentDocument.AddCabinet(yeniDolap);
+
+            // Ekranı güncelle
+            _canvas.Invalidate();
         }
+
+
     }
 }
